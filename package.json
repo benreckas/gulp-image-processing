@@ -1,0 +1,16 @@
+{
+  "name": "gulp-image-processing",
+  "version": "1.0.0",
+  "description": "Gulp Image Processing",
+  "author": "Ben Reckas",
+  "dependencies": {
+    "del": "^3.0.0",
+    "delete-empty": "^2.0.0",
+    "globby": "^8.0.1",
+    "gulp": "^3.9.1",
+    "gulp-image-resize": "^0.13.0",
+    "gulp-imagemin": "^4.1.0",
+    "gulp-newer": "^1.4.0",
+    "merge2": "^1.2.2"
+  }
+}
