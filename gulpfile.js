@@ -7,27 +7,28 @@ const gulpImageresize = require("gulp-image-resize");
 const gulpNewer = require("gulp-newer");
 const merge2 = require("merge2");
 
+/**
+ *
+ * Make your desired changes or add additional objects to the transforms arrary below.
+ *
+ */
 
-// Array of Desired Transforms
 const transforms = [
   {
     src: "./image-raw/*",
     dist: "./image-processed/",
     params: {
+      //  Number value that is passed as pixel or percentage value to imagemagick.
       width: 800,
-      height: 600,
+      // Number value that is passed as pixel or percentage value to imagemagick.
+      height: 450,
+      // Determines whether images will be cropped after resizing to exactly match width and height.
       crop: true,
-      quality: 1
-    }
-  },
-  {
-    src: "./image-raw/*",
-    dist: "./image-processed/",
-    params: {
-      width: 1500,
-      height: 844,
-      crop: true,
-      quality: 1
+      // When cropping images this sets the image gravity. Doesn't have any effect, if crop is false.
+      // string: NorthWest, North, NorthEast, West, Center, East, SouthWest, South, SouthEast
+      gravity: "Center",
+      // Determines the output quality of the resized image. Ranges from 0, really bad, to 1, almost lossless. Only applies to jpg images.
+      quality: .75
     }
   }
 ];
@@ -59,19 +60,22 @@ gulp.task("img:copy", ["img:clean"], () => {
  */
 
 gulp.task("img:thumbnails", ["img:clean"], () => {
-  // create empty streams array for merge2
   const streams = [];
-  // loop through transforms and add to streams array
   transforms.map((transform) => {
-    // create a stream for each transform
     streams.push(
       gulp.src(transform.src)
         .pipe(gulpNewer(transform.dist + "thumbs_" + transform.params.width + "x" + transform.params.height))
         .pipe(gulpImageresize({
+          /**
+           *
+           * Add additional properties here from the transforms array.
+           *
+           */
           imageMagick: true,
           width: transform.params.width,
           height: transform.params.width,
           crop: transform.params.crop,
+          gravity: transform.params.gravity,
           quality: transform.params.quality
         }))
         .pipe(gulpImagemin({
@@ -81,7 +85,6 @@ gulp.task("img:thumbnails", ["img:clean"], () => {
         .pipe(gulp.dest(transform.dist + "thumbs_" + transform.params.width + "x" + transform.params.height))
     );
   });
-  // merge streams
   return merge2(streams);
 });
 
@@ -97,32 +100,23 @@ gulp.task("img:thumbnails", ["img:clean"], () => {
  */
 
 gulp.task("img:clean", ["img:clean:directories"], () => {
-  // get arrays of src and dist filepaths (returns array of arrays)
   return Promise.all([
     globby("./image-raw/**/*", { nodir: true }),
     globby("./image-processed/**/*", { nodir: true })
   ])
   .then((paths) => {
-    // create arrays of filepaths from array of arrays returned by promise
     const srcFilepaths = paths[0];
     const distFilepaths = paths[1];
-    // empty array of files to delete
     const distFilesToDelete = [];
-    // diffing
     distFilepaths.map((distFilepath) => {
-      // sdistFilepathFiltered: remove dist root folder and thumbs folders names for comparison
       const distFilepathFiltered = distFilepath.replace(/\/public/, "").replace(/thumbs_[0-9]+x[0-9]+\//, "");
-      // check if simplified dist filepath is in array of src simplified filepaths
-      // if not, add the full path to the distFilesToDelete array
       if ( srcFilepaths.indexOf(distFilepathFiltered) === -1 ) {
         distFilesToDelete.push(distFilepath);
       }
     });
-    // return array of files to delete
     return distFilesToDelete;
   })
   .then((distFilesToDelete) => {
-    // delete files
     del.sync(distFilesToDelete);
   })
   .catch((error) => {
@@ -144,22 +138,16 @@ gulp.task("img:clean:directories", () => {
   globby("./image-processed/**/thumbs_+([0-9])x+([0-9])/")
     .then((paths) => {
       console.log("All thumbs folders: " + paths);
-      // existing thumbs directories in dist
       const distThumbsDirs = paths;
-      // create array of dirs that should exist by walking transforms map
       const srcThumbsDirs = transforms.map((transform) => transform.dist + "thumbs_" + transform.params.width + "x" + transform.params.height + "/");
-      // array of dirs to delete
       const todeleteThumbsDirs = distThumbsDirs.filter((el) => srcThumbsDirs.indexOf(el) === -1);
       console.log("To delete thumbs folders: " + todeleteThumbsDirs);
-      // pass array to next step
       return todeleteThumbsDirs;
     })
     .then((todeleteThumbsDirs) => {
-      // deleted diff thumbnails directories
       del.sync(todeleteThumbsDirs);
     })
     .then(() => {
-      // delete empty directories in dist images
       deleteEmpty.sync("./image-processed/");
     })
     .catch((error) => {
@@ -167,14 +155,11 @@ gulp.task("img:clean:directories", () => {
     });
 });
 
+/**
+ * Gulp Task Commands
+ */
 
-// `gulp img` to process images
 gulp.task("img", ["img:copy", "img:thumbnails"]);
-
-// img  -> img:copy        -> img:clean  -> img:clean:directories
-//      -> img:thumbnails  -> img:clean  -> img:clean:directories
-
-// `gulp watch` to sync/update changes if the site is deployed
 gulp.task("watch", ["browser-sync"], () => {
   gulp.watch(["image-raw/**/*"], ["img"]);
 });
