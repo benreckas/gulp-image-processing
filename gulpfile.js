@@ -10,6 +10,7 @@ const merge2 = require("merge2");
 /**
  *
  * Make your desired changes or add additional objects to the transforms arrary below.
+ * For param details go to: https://www.npmjs.com/package/gulp-image-resize
  *
  */
 
@@ -18,17 +19,11 @@ const transforms = [
     src: "./image-raw/*",
     dist: "./image-processed/",
     params: {
-      //  Number value that is passed as pixel or percentage value to imagemagick.
-      width: 800,
-      // Number value that is passed as pixel or percentage value to imagemagick.
-      height: 450,
-      // Determines whether images will be cropped after resizing to exactly match width and height.
-      crop: true,
-      // When cropping images this sets the image gravity. Doesn't have any effect, if crop is false.
-      // string: NorthWest, North, NorthEast, West, Center, East, SouthWest, South, SouthEast
+      width: 1000,
+      height: 0,
+      crop: false,
       gravity: "Center",
-      // Determines the output quality of the resized image. Ranges from 0, really bad, to 1, almost lossless. Only applies to jpg images.
-      quality: .75
+      quality: .6
     }
   }
 ];
@@ -51,20 +46,20 @@ gulp.task("img:copy", ["img:clean"], () => {
 });
 
 /**
- * Make thumbnails
+ * Process Images
  * 1. walk transforms array to build an array of streams
  *    - get src images
  *    - check if images in src are newer than images in dist
- *    - if they are, make thumbnails and minify
- * 2. merge streams to create all thumbnails in parallel
+ *    - if they are, process images and minify
+ * 2. merge streams to create all images in parallel
  */
 
-gulp.task("img:thumbnails", ["img:clean"], () => {
+gulp.task("img:process", ["img:clean"], () => {
   const streams = [];
   transforms.map((transform) => {
     streams.push(
       gulp.src(transform.src)
-        .pipe(gulpNewer(transform.dist + "thumbs_" + transform.params.width + "x" + transform.params.height))
+        .pipe(gulpNewer(`${transform.dist}${transform.params.width}x${transform.params.height}`))
         .pipe(gulpImageresize({
           /**
            *
@@ -73,7 +68,7 @@ gulp.task("img:thumbnails", ["img:clean"], () => {
            */
           imageMagick: true,
           width: transform.params.width,
-          height: transform.params.width,
+          height: transform.params.height,
           crop: transform.params.crop,
           gravity: transform.params.gravity,
           quality: transform.params.quality
@@ -82,7 +77,7 @@ gulp.task("img:thumbnails", ["img:clean"], () => {
           progressive: true,
           svgoPlugins: [{ removeViewBox: false }, { removeUselessStrokeAndFill: false }]
         }))
-        .pipe(gulp.dest(transform.dist + "thumbs_" + transform.params.width + "x" + transform.params.height))
+        .pipe(gulp.dest(`${transform.dist}${transform.params.width}x${transform.params.height}`))
     );
   });
   return merge2(streams);
@@ -90,13 +85,13 @@ gulp.task("img:thumbnails", ["img:clean"], () => {
 
 /**
  * Clean images
- * 1. get arrays of filepaths in images src (base images) and dist (base images and thumbnails)
+ * 1. get arrays of filepaths in images src (base images) and dist (base base and processed images)
  * 2. Diffing process
  *    - build list of filepaths in src
- *    - loop through filepaths in dist, remove dist and thumbnails specific parts
- *      to get both base images and corresponding thumbnails, compare with filepaths in src
+ *    - loop through filepaths in dist, remove files within dist
+ *      to get both base images and corresponding processed images, compare with filepaths in src
  *    - if no match, add full dist image filepath to delete array
- * 3. Delete files (base images and thumbnails)
+ * 3. Delete files (base images and processed images)
  */
 
 gulp.task("img:clean", ["img:clean:directories"], () => {
@@ -129,7 +124,7 @@ gulp.task("img:clean", ["img:clean:directories"], () => {
  * 1. Diffing process between src and dist
  *    - Build array of all thumbs_xxx directories that should exist using the transforms map
  *    - Build array of all thumbs_xxx directories actually in dist
- *    - Diffing: array of all unused thumbnails directories in dist
+ *    - Diffing: array of all unused image directories in dist
  * 2. Delete files
  * 3. Delete all empty folders in dist images
  */
@@ -159,7 +154,7 @@ gulp.task("img:clean:directories", () => {
  * Gulp Task Commands
  */
 
-gulp.task("img", ["img:copy", "img:thumbnails"]);
+gulp.task("img", ["img:copy", "img:process"]);
 gulp.task("watch", ["browser-sync"], () => {
   gulp.watch(["image-raw/**/*"], ["img"]);
 });
