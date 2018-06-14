@@ -1,5 +1,8 @@
 # Process Images with Gulp
 
+#### Overview:
+Created a Gulp project to batch process images using gulp-image-resize. This will resize, reposition, and compress your images quickly and efficiently. I created this project to learn more about how Gulp works, and to work as an automated tool in other projects that require images that are optimized for web. 
+
 #### Set-up:
 
 - `git clone https://github.com/benreckas/gulp-image-processing.git`
