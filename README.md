@@ -6,7 +6,7 @@ Created a Gulp project to batch process images using gulp-image-resize. This wil
 #### Set-up:
 
 - `git clone https://github.com/benreckas/gulp-image-processing.git`
-- [Install gulp](https://gulpjs.org/getting-started) globally if it isn't already installed on your machine.
+- `npm i -g gulp-cli` to install Gulp if it isn't already installed on your machine.
 - From the project root run `npm install`
 - Adjust the desired settings in the `gulpfile.js`
   - You can learn more about all of the configuration options at [gulp-image-resize](https://www.npmjs.com/package/gulp-image-resize).
